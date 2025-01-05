@@ -30,7 +30,6 @@ const cards = [
         icon: <Face5 sx={{color: 'black'}} fontSize="large"/>,
         color: 'black',
         number: 1,
-        flipped: false
     },
     {
         icon: <AttachMoney sx={{color: 'lime'}} fontSize="large"/>,
@@ -265,14 +264,14 @@ export default function CardMemoryGame() {
                             onClick={() => startTimer(setIsRunning)}
                             disabled={isRunning}
                         >
-                            Start Timer
+                            Start
                         </Button>
                         <Button
                             variant="outlined"
                             onClick={handleReset}
                             sx={{ ml: 2 }}
                         >
-                            Reset Timer
+                            Reset
                         </Button>
                     
                         
@@ -280,14 +279,14 @@ export default function CardMemoryGame() {
                     <Box mt={2} >
                         <Button
                             variant="outlined"
-                            disabled={mode == 'easy'}
+                            disabled={mode == 'easy' || isRunning}
                             onClick={() => setMode('easy')}
                         >
                             Easy
                         </Button>
                         <Button
                             variant="outlined"
-                            disabled={mode == 'intermediate'}
+                            disabled={mode == 'intermediate' || isRunning}
                             sx={{ ml: 2 }}
                             onClick={() => setMode('intermediate')}
                         >
@@ -295,7 +294,7 @@ export default function CardMemoryGame() {
                         </Button>
                         <Button
                             variant="outlined"
-                            disabled={mode == 'hard'}
+                            disabled={mode == 'hard' || isRunning}
                             sx={{ ml: 2 }}
                             onClick={() => setMode('hard')}
                         >

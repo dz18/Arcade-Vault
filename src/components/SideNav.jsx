@@ -19,12 +19,22 @@ import {
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LoginModal from "./LoginModal";
 
 export default function SideNav() {
 
     const navigate = useNavigate()
 
     const [hide, setHide] = useState(false)
+    const [openModal, setOpenModal] = useState(false)
+
+    const handleModalOpen = () => {
+        setOpenModal(true)
+    }
+
+    const handleModalClose = () => {
+        setOpenModal(false)
+    }
 
     return (
         <Box
@@ -37,7 +47,6 @@ export default function SideNav() {
                 bgcolor='white'
                 width={250}
                 height='100vh'
-                borderRight='1px solid lightgrey'
                 boxSizing='border-box'
                 hidden={hide}
             >
@@ -51,10 +60,15 @@ export default function SideNav() {
                 >
                     <Button
                         variant="outlined"
+                        onClick={handleModalOpen}
                     >
                         Login
                     </Button>
                 </Box>
+                <LoginModal
+                    open={openModal}
+                    onClose={handleModalClose}
+                />
                 
 
                 <Divider/>
@@ -122,13 +136,21 @@ export default function SideNav() {
                 </Typography>
 
                 <List>
-                    <ListItemButton>
+                    <ListItemButton 
+                        LinkComponent='a'
+                        href="https://github.com/dz18/game-station"
+                        target="_blank"
+                    >
                         <ListItemIcon>
                             <GitHub fontSize="large"/>
                         </ListItemIcon>
                         <ListItemText primary='Source Code'/>
                     </ListItemButton>
-                    <ListItemButton>
+                    <ListItemButton
+                        LinkComponent='a'
+                        href="https://github.com/dz18"
+                        target="_blank"
+                    >
                         <ListItemIcon>
                             <Code fontSize="large"/>
                         </ListItemIcon>
@@ -145,7 +167,15 @@ export default function SideNav() {
                 height='100vh'
                 display='flex'
                 alignItems='center'
+                flexDirection='column'
             >
+                <Box
+                    display='flex'
+                    height='auto'
+                    flexGrow={1}
+                    borderLeft='1px solid lightgrey'
+                    width='25px'
+                />
                 {hide ?
                     <Box
                         onClick={() => setHide(!hide)}
@@ -182,6 +212,13 @@ export default function SideNav() {
                         <KeyboardDoubleArrowLeftOutlined/>
                     </Box>
                 }
+                <Box
+                    display='flex'
+                    height='auto'
+                    flexGrow={1}
+                    borderLeft='1px solid lightgrey'
+                    width='25px'
+                />
             </Box>
 
         </Box>
