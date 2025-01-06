@@ -40,7 +40,12 @@ export default function LoginModal ({ open, onClose, setOpenModal }) {
         setOpenModal(false)
     }
 
-    const handleLogin = () => {
+    const handleLogin = async () => {
+        try {
+            await logIn(email, password)
+        } catch (error) {
+            console.error('Error handling login', error)
+        }
         setOpenModal(false)
     }
 
