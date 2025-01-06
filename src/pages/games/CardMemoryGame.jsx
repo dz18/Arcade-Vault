@@ -23,7 +23,7 @@ import {
     formatTime,
     resetTimer,
     startTimer
-} from "../hooks/GameClock";
+} from "../../hooks/GameClock";
 
 const cards = [
     {

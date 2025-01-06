@@ -7,6 +7,11 @@ import {
     ListItemIcon,
     ListItemText,
     ListItemButton,
+    Avatar,
+    IconButton,
+    Menu,
+    MenuItem,
+    MenuList,
 } from "@mui/material";
 import { 
     Code,
@@ -15,18 +20,33 @@ import {
     Home,
     KeyboardDoubleArrowLeftOutlined,
     KeyboardDoubleArrowRightOutlined,
-    Person
+    Logout,
+    Person,
+    Settings
 } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginModal from "./LoginModal";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function SideNav() {
 
     const navigate = useNavigate()
 
+    const { user, userData, logOut } = useAuth()
+
     const [hide, setHide] = useState(false)
     const [openModal, setOpenModal] = useState(false)
+    const [anchorEl, setAnchorEl] = useState(null)
+    const openSettingsMenu = Boolean(anchorEl)
+
+    const handleSettingsMenu = (e) => {
+        setAnchorEl(e.currentTarget)
+    }
+
+    const closeSettingsMenu = () => {
+        setAnchorEl(null)
+    }
 
     const handleModalOpen = () => {
         setOpenModal(true)
@@ -34,6 +54,10 @@ export default function SideNav() {
 
     const handleModalClose = () => {
         setOpenModal(false)
+    }
+
+    const handleLogout = async () => {
+        await logOut()
     }
 
     return (
@@ -58,16 +82,57 @@ export default function SideNav() {
                     display='flex'
                     alignItems='center'
                 >
-                    <Button
-                        variant="outlined"
-                        onClick={handleModalOpen}
-                    >
-                        Login
-                    </Button>
+                    {user ?
+                        <>
+                            <Box 
+                                flexGrow={1} 
+                                display='flex' 
+                                alignItems='center'
+                            >
+                                <Avatar
+                                    sx={{
+                                        mr: 1,
+                                        ml: 1
+                                    }}
+                                />
+                                <Typography>
+                                    {userData?.username || userData?.username.slice(0,12) + '...'}
+                                </Typography>
+                            </Box>
+                            <IconButton
+                                onClick={handleSettingsMenu}
+                            >
+                                <Settings/>
+                            </IconButton>
+                            <Menu
+                                anchorEl={anchorEl}
+                                open={openSettingsMenu}
+                                onClose={closeSettingsMenu}
+                            >
+                                <MenuItem
+                                    onClick={handleLogout}
+                                >
+                                    <ListItemIcon>
+                                        <Logout/>
+                                    </ListItemIcon>
+                                    <ListItemText primary='Logout'/>
+                                </MenuItem>
+                            </Menu>
+                        </>
+                    :
+                        <Button
+                            variant="outlined"
+                            onClick={handleModalOpen}
+                        >
+                            Login
+                        </Button>
+                    }
+                    
                 </Box>
                 <LoginModal
                     open={openModal}
                     onClose={handleModalClose}
+                    setOpenModal={setOpenModal}
                 />
                 
 
@@ -83,7 +148,9 @@ export default function SideNav() {
                         </ListItemIcon>
                         <ListItemText primary='Home' />
                     </ListItemButton>
-                    <ListItemButton>
+                    <ListItemButton
+                        onClick={() => navigate('/account-details')}
+                    >
                         <ListItemIcon>
                             <Person fontSize="large"/>
                         </ListItemIcon>

@@ -7,10 +7,12 @@ import {
 } from "react-router-dom";
 
 // Pages
-import Index from './pages';
+import Index from './pages/Index';
 import HomePage from './pages/HomePage';
 import '@fontsource/roboto/400.css';
-import CardMemoryGame from './pages/CardMemoryGame';
+import CardMemoryGame from './pages/games/CardMemoryGame';
+import { AuthProvider } from './contexts/AuthContext';
+import AccountDetailsPage from './pages/AccountPage';
 
 const router = createBrowserRouter([
   {
@@ -26,6 +28,10 @@ const router = createBrowserRouter([
         element: <HomePage />
       },
       {
+        path: 'account-details',
+        element: <AccountDetailsPage/>
+      },
+      {
         path: 'card-memory',
         element: <CardMemoryGame/>
       }
@@ -35,6 +41,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </StrictMode>,
 )

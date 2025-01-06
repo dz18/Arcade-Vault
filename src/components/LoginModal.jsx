@@ -7,9 +7,43 @@ import {
     TextField,
     Button
 } from "@mui/material";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
-export default function LoginModal ({ open, onClose }) {
+export default function LoginModal ({ open, onClose, setOpenModal }) {
+
+    const { 
+        signUp,
+        logIn
+    } = useAuth()
+
+    const [SignUp, setSignUp] = useState(false)
+    const [username, setUsername] = useState('')
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+
+    const handleOpenSignUp = () => {
+        setSignUp(true)
+    }
+
+    const handleCloseSignUp = () => {
+        setSignUp(false)
+    }
+
+    const handleSignUp = async () => {
+        try {
+            await signUp(username, email, password)
+        } catch (error) {
+            console.error('Error handling signup:', error)
+        }
+        setOpenModal(false)
+    }
+
+    const handleLogin = () => {
+        setOpenModal(false)
+    }
+
     return (
         <Modal
             open={open}
@@ -43,7 +77,12 @@ export default function LoginModal ({ open, onClose }) {
                         variant="h6" 
                         flexGrow={1}
                     >
-                        Welcome back!
+                    {SignUp ? 
+                        'Create an Account'
+                    :
+                        'Welcome back!'
+                    }
+                        
                     </Typography>
                     <IconButton
                         onClick={onClose}
@@ -57,6 +96,19 @@ export default function LoginModal ({ open, onClose }) {
                     px={2}
                     py={1}
                 >
+                {SignUp &&
+                    <>
+                        <Typography>Username</Typography>
+                        <TextField
+                            placeholder="Username"
+                            size="small"
+                            fullWidth
+                            sx={{ mb : 1 }}
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                    </>
+                }
                     <Typography>
                         Email
                     </Typography>
@@ -65,6 +117,8 @@ export default function LoginModal ({ open, onClose }) {
                         size="small"
                         fullWidth
                         sx={{ mb : 1 }}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                     <Typography>
                         Password
@@ -74,33 +128,88 @@ export default function LoginModal ({ open, onClose }) {
                         size="small"
                         fullWidth
                         sx={{ mb : 1 }}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                     />
 
-                    <Box
-                        sx={{ mb : 1}} 
-                    >
-                        <Link><Typography 
-                            component='span'
+                    {!SignUp &&
+                        <Box
+                            sx={{ mb : 1}} 
                         >
-                            Forgot Password?
-                        </Typography></Link>
-                    </Box>
-                    
+                            <Typography 
+                                component='span'
+                                color="blue"
+                                sx={{
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Forgot Password?
+                            </Typography>
+                        </Box>
+                    }
 
-                    <Button
-                        variant="contained"
-                        fullWidth
-                    >
-                        Login
-                    </Button>
+                    
+                    {SignUp ?
+                        <Button
+                            onClick={handleSignUp}
+                            variant="contained"
+                            fullWidth
+                            sx={{mt: 1}}
+                        >
+                            Sign Up
+                        </Button>
+                    :
+                        <Button
+                            onClick={handleLogin}
+                            variant="contained"
+                            fullWidth
+                        >
+                            Login
+                        </Button>
+
+                    }
                 </Box>
                 
-                <Typography
-                    mx={2}
-                    my={1}
-                >
-                    Don't have an Account? <Link>Click Here</Link>
-                </Typography>
+                {SignUp ? 
+                    <Typography
+                        mx={2}
+                        my={1}
+                    >
+                        Already have an Account? {' '}
+                        <Typography 
+                            component='span'
+                            onClick={handleCloseSignUp}
+                            color="blue"
+                            sx={{ 
+                                textDecoration: 'underline',
+                                cursor: 'pointer'
+                            }}
+                        >
+                                Click Here
+                        </Typography>
+                    </Typography>
+
+                :
+                    <Typography
+                        mx={2}
+                        my={1}
+                    >
+                        Don't have an Account? {' '}
+                        <Typography 
+                            component='span'
+                            onClick={handleOpenSignUp}
+                            color="blue"
+                            sx={{ 
+                                textDecoration: 'underline',
+                                cursor: 'pointer'
+                            }}
+                        >
+                                Click Here
+                        </Typography>
+                    </Typography>
+                }
+                
 
             </Box>
         </Modal>
