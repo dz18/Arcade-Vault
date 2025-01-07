@@ -43,7 +43,9 @@ export const AuthProvider = ({ children }) => {
     }
 
     const logOut = async() => {
-        return await signOut(auth)
+        await signOut(auth)
+        setUser(null)
+        setUserData(null)
     }
 
     useEffect(() => {
@@ -79,7 +81,8 @@ export const AuthProvider = ({ children }) => {
         userData,
         signUp,
         logIn,
-        logOut
+        logOut,
+        loading
     }
 
     return (

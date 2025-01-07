@@ -24,7 +24,7 @@ import {
     Person,
     Settings
 } from "@mui/icons-material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginModal from "./LoginModal";
 import { useAuth } from "../contexts/AuthContext";
@@ -38,7 +38,6 @@ export default function SideNav() {
     const [hide, setHide] = useState(false)
     const [openModal, setOpenModal] = useState(false)
     const [anchorEl, setAnchorEl] = useState(null)
-    const openSettingsMenu = Boolean(anchorEl)
 
     const handleSettingsMenu = (e) => {
         setAnchorEl(e.currentTarget)
@@ -58,7 +57,14 @@ export default function SideNav() {
 
     const handleLogout = async () => {
         await logOut()
+        closeSettingsMenu()
     }
+
+    useEffect(() => {
+        if (anchorEl && !document.body.contains(anchorEl)) {
+            setAnchorEl(null); // Reset if invalid
+        }
+    }, [anchorEl]);
 
     return (
         <Box
@@ -96,7 +102,7 @@ export default function SideNav() {
                                     }}
                                 />
                                 <Typography>
-                                    {userData?.username || userData?.username.slice(0,12) + '...'}
+                                    {userData?.username.length < 15 ? userData?.username : userData?.username.slice(0,15) + '...'}
                                 </Typography>
                             </Box>
                             <IconButton
@@ -106,8 +112,9 @@ export default function SideNav() {
                             </IconButton>
                             <Menu
                                 anchorEl={anchorEl}
-                                open={openSettingsMenu}
+                                open={Boolean(anchorEl)}
                                 onClose={closeSettingsMenu}
+                                keepMounted
                             >
                                 <MenuItem
                                     onClick={handleLogout}
@@ -149,7 +156,7 @@ export default function SideNav() {
                         <ListItemText primary='Home' />
                     </ListItemButton>
                     <ListItemButton
-                        onClick={() => navigate('/account-details')}
+                        onClick={user ? () => navigate('/account-details') : handleModalOpen}
                     >
                         <ListItemIcon>
                             <Person fontSize="large"/>
@@ -166,7 +173,7 @@ export default function SideNav() {
                     px={2}
                     pt={1}
                 >
-                    Games
+                    Single-Player Games
                 </Typography>
                 <List>
                     <ListItemButton

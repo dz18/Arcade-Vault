@@ -10,9 +10,11 @@ import {
 import Index from './pages/Index';
 import HomePage from './pages/HomePage';
 import '@fontsource/roboto/400.css';
-import CardMemoryGame from './pages/games/CardMemoryGame';
 import { AuthProvider } from './contexts/AuthContext';
 import AccountDetailsPage from './pages/AccountPage';
+
+// Games
+import CardMemoryGame from './pages/singleplayer-games/CardMemoryGame';
 
 const router = createBrowserRouter([
   {

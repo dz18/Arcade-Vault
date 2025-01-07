@@ -2,7 +2,8 @@ import {
     Box, 
     Button, 
     Grid2, 
-    Typography 
+    Typography, 
+    useStepContext
 } from "@mui/material";
 import { 
     DirectionsCar,
@@ -16,7 +17,8 @@ import {
     AcUnit,
     CatchingPokemon,
     Pets,
-    AttachMoney
+    AttachMoney,
+    CurrencyBitcoin
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import { 
@@ -24,6 +26,10 @@ import {
     resetTimer,
     startTimer
 } from "../../hooks/GameClock";
+import { doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
+import { useAuth } from "../../contexts/AuthContext";
+import { db } from "../../../firebaseConfig";
+import CardMemoryLeaderboards from "../../components/leaderboards/CardMemoryLeaderboards";
 
 const cards = [
     {
@@ -90,13 +96,16 @@ const cards = [
 
 export default function CardMemoryGame() {
 
+    const { user, userData } = useAuth()
+
     // Default Game Settings
-    const [totalCards, setTotalCards] = useState(12);
     const [startTime, setStartTime] = useState(1 * 60)
     const [time, setTime] = useState(startTime); // Time in seconds (5 minutes)
     const [isRunning, setIsRunning] = useState(false);
     const [deck, setDeck] = useState([])
     const [mode, setMode] = useState('easy')
+    const [score, setScore] = useState(0)
+    const [win, setWin] = useState(false)
 
     const [flippedCards, setFlippedCards] = useState([])
     const [matchedCards, setMatchCards] = useState([])
@@ -124,11 +133,14 @@ export default function CardMemoryGame() {
     }, [isRunning]);
 
     useEffect(() => {
-        if (time === 0) {
+        if (time === 0 || win) {
             setIsRunning(false)
-            alert('Time is up')
+            updateUserStats()
+            if (time === 0)
+                alert('Time is up')
         }
-    }, [time])
+        setWin(false)
+    }, [time, win])
 
     // Generate Cards
     useEffect(() => {
@@ -142,8 +154,7 @@ export default function CardMemoryGame() {
 
     const handleReset = () => {
         resetTimer(setIsRunning, setTime, startTime)
-        setFlippedCards([])
-        setMatchCards([])
+        setScore(0)
         const shuffled = shuffleCards()
         setDeck(shuffled)
         const initializedCardStatus = shuffled.map(card => ({
@@ -154,6 +165,10 @@ export default function CardMemoryGame() {
     }
 
     const shuffleCards = () => {
+
+        setFlippedCards([])
+        setMatchCards([])
+
         const shuffled = [...cards] // Assuming cards is an array already defined
     
         for (let i = shuffled.length - 1; i > 0; i--) {
@@ -189,6 +204,47 @@ export default function CardMemoryGame() {
         return selectedCards;
     };
 
+    const addScore = () => {
+        setScore(score + 100)
+    }
+
+    const decreaseScore = () => {
+        setScore(score - 20)
+    }
+
+    const updateUserStats = async () => {
+        try {
+            // Check if this is the first time the user has played the game
+
+            const docRef = doc(db, 'games', 'cardMemory', "leaderboards", user.uid)
+
+            const docSnap = await getDoc(docRef)
+            if (docSnap.exists()) {
+                await updateDoc(docRef, {
+                    bestScore: {
+                        [mode] : Math.max(docSnap.data()?.bestScore?.[mode] || 0, score)
+                    },
+                    bestTime: {
+                        [mode] : Math.max(docSnap.data()?.bestTime?.[mode] || 0, time)
+                    },
+                    lastPlayed: new Date(),
+                    totalGamesPlayed: increment(1)
+                })
+            } else {
+                await setDoc(docRef, {
+                    bestScore: {[mode]: score},
+                    bestTime: {[mode]: time},
+                    lastPlayed: new Date(),
+                    totalGamesPlayed: increment(1),
+                    username: userData.username
+                })
+            }
+
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
     const handleCardFlip = (index) => {
         
         if (flippedCards.length === 2 || cardStatus[index].flipped || isRunning === false)
@@ -212,12 +268,17 @@ export default function CardMemoryGame() {
                 const updatedMatchedCards = [...matchedCards, firstCard.number]
                 setMatchCards(updatedMatchedCards)
                 setFlippedCards([])
-
+                addScore()
                 if (updatedMatchedCards.length === deck.length / 2) {
+                    // Win
                     alert('you win')
+                    setScore(score + time)
+                    setWin(true)
                     setIsRunning(false)
                 }
             } else {
+                // No Match
+                decreaseScore()
                 setTimeout(() => {
                     const resetStatus = [...cardStatus]
                     resetStatus[firstIndex].flipped = false
@@ -227,6 +288,11 @@ export default function CardMemoryGame() {
                 }, 1000)
             }
         }
+    }
+
+    const handleStartGame = () => {
+        handleReset()
+        startTimer(setIsRunning)
     }
 
     return (
@@ -261,7 +327,7 @@ export default function CardMemoryGame() {
                     <Box mt={2} flexGrow={1}>
                         <Button
                             variant="outlined"
-                            onClick={() => startTimer(setIsRunning)}
+                            onClick={handleStartGame}
                             disabled={isRunning}
                         >
                             Start
@@ -311,11 +377,14 @@ export default function CardMemoryGame() {
                 my={2}
                 borderRadius={2}
             >
+
+                <Typography m={1} ml={0}>Score: {score}</Typography>
+
                 <Grid2 spacing={2} container>
                 {deck.map((card, index) => (
                     <Grid2 
                         key={index}
-                        size={2}
+                        size={{xs: 4, md: 2}}
                     >
                         <Box
                             onClick={() => handleCardFlip(index)}
@@ -355,6 +424,9 @@ export default function CardMemoryGame() {
                 ))}
                 </Grid2>
             </Box>
+
+            {/* LeaderBoards */}
+            <CardMemoryLeaderboards/>
 
         </Box>
     );
