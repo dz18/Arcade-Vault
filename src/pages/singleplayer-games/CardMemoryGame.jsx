@@ -135,7 +135,9 @@ export default function CardMemoryGame() {
     useEffect(() => {
         if (time === 0 || win) {
             setIsRunning(false)
-            updateUserStats()
+            if (user){
+                updateUserStats()
+            }
             if (time === 0)
                 alert('Time is up')
         }
@@ -214,28 +216,31 @@ export default function CardMemoryGame() {
 
     const updateUserStats = async () => {
         try {
-            // Check if this is the first time the user has played the game
 
             const docRef = doc(db, 'games', 'cardMemory', "leaderboards", user.uid)
 
             const docSnap = await getDoc(docRef)
             if (docSnap.exists()) {
+                console.log('doc exist')
                 await updateDoc(docRef, {
                     bestScore: {
+                        ...docSnap.data()?.bestScore,
                         [mode] : Math.max(docSnap.data()?.bestScore?.[mode] || 0, score)
                     },
                     bestTime: {
-                        [mode] : Math.max(docSnap.data()?.bestTime?.[mode] || 0, time)
+                        ...docSnap.data()?.bestTime,
+                        [mode] : Math.min(docSnap.data()?.bestTime?.[mode] || Infinity, time)
                     },
                     lastPlayed: new Date(),
                     totalGamesPlayed: increment(1)
                 })
             } else {
+                console.log('setting doc')
                 await setDoc(docRef, {
                     bestScore: {[mode]: score},
                     bestTime: {[mode]: time},
                     lastPlayed: new Date(),
-                    totalGamesPlayed: increment(1),
+                    totalGamesPlayed: 1,
                     username: userData.username
                 })
             }
@@ -389,7 +394,11 @@ export default function CardMemoryGame() {
                         <Box
                             onClick={() => handleCardFlip(index)}
                             sx={{
-                                cursor: isRunning ? 'pointer' : 'not-allowed'
+                                cursor: isRunning ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.3s',
+                                '&:hover': isRunning && {
+                                    boxShadow: 10
+                                }
                             }}
                             bgcolor={cardStatus[index].flipped || matchedCards.includes(card.number) ? 'white' : 'grey'}
                             border="1px solid black"
@@ -426,7 +435,7 @@ export default function CardMemoryGame() {
             </Box>
 
             {/* LeaderBoards */}
-            <CardMemoryLeaderboards/>
+            <CardMemoryLeaderboards mode={mode}/>
 
         </Box>
     );

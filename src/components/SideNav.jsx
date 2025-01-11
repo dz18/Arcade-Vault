@@ -21,6 +21,7 @@ import {
     KeyboardDoubleArrowLeftOutlined,
     KeyboardDoubleArrowRightOutlined,
     Logout,
+    Message,
     Person,
     Settings
 } from "@mui/icons-material";

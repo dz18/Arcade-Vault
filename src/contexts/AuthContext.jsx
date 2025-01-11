@@ -6,7 +6,7 @@ import {
     signOut,
     onAuthStateChanged
 } from "firebase/auth";
-import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc, Timestamp } from "firebase/firestore";
 
 const AuthContext = createContext()
 
