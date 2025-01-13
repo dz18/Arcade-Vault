@@ -11,74 +11,56 @@ export default function CardMemoryLeaderboards({ mode }) {
     const [bestTimes, setBestTimes] = useState([])
     const [mostPlays, setMostPlays] = useState([])
 
-    const getBestScores = () => {
-        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
-        const q = query(leaderboardsRef, orderBy(`bestScore.${mode}`, 'desc'), limit(15));
-        
-        // Listen for real-time updates
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const bestScores = snapshot.docs.map(doc => ({
+    const fetchLeaderboards = async (mode) => {
+        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards')
+    
+        // Queries for Best Scores, Best Times, and Most Plays
+        const bestScoresQuery = query(leaderboardsRef, orderBy(`bestScore.${mode}`, 'desc'), limit(15))
+        const bestTimesQuery = query(leaderboardsRef, orderBy(`bestTime.${mode}`, 'desc'), limit(15))
+        const mostPlaysQuery = query(leaderboardsRef, orderBy('totalGamesPlayed', 'desc'), limit(15))
+    
+        try {
+            const [bestScoresSnapshot, bestTimesSnapshot, mostPlaysSnapshot] = await Promise.all([
+                getDocs(bestScoresQuery),
+                getDocs(bestTimesQuery),
+                getDocs(mostPlaysQuery)
+            ])
+    
+            const bestScores = bestScoresSnapshot.docs.map(doc => ({
                 id: doc.id,
                 score: doc.data().bestScore[mode],
                 username: doc.data().username
-            }));
-            console.log(bestScores);
-            setBestScores(bestScores);
-        }, (error) => {
-            console.error(error);
-        });
-
-        return unsubscribe; // Return the unsubscribe function for cleanup
-    };
-
-    const getBestTimes = () => {
-        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
-        const q = query(leaderboardsRef, orderBy(`bestTime.${mode}`, 'desc'), limit(15));
-
-        // Listen for real-time updates
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const bestTimes = snapshot.docs.map(doc => ({
+            }))
+            
+            const bestTimes = bestTimesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 time: doc.data().bestTime[mode],
                 username: doc.data().username
-            }));
-            console.log(bestTimes);
-            setBestTimes(bestTimes);
-        }, (error) => {
-            console.error(error);
-        });
-
-        return unsubscribe; // Return the unsubscribe function for cleanup
-    };
-
-    const getMostPlays = () => {
-        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
-        const q = query(leaderboardsRef, orderBy('totalGamesPlayed', 'desc'), limit(15));
-
-        // Listen for real-time updates
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const mostPlays = snapshot.docs.map(doc => ({
+            }))
+    
+            const mostPlays = mostPlaysSnapshot.docs.map(doc => ({
                 id: doc.id,
                 totalGamesPlayed: doc.data().totalGamesPlayed,
                 username: doc.data().username
-            }));
-            setMostPlays(mostPlays);
-        }, (error) => {
-            console.error(error);
-        });
-
-        return unsubscribe; // Return the unsubscribe function for cleanup
-    };
+            }))
+    
+            return { bestScores, bestTimes, mostPlays }
+        } catch (error) {
+            console.error(error)
+            return { bestScores: [], bestTimes: [], mostPlays: [] }
+        }
+    }
 
     useEffect(() => {
-        const fetchLeaderboards = async () => {
+        const fetchData = async () => {
             setLoading(true)
-            await getBestScores()
-            await getBestTimes()
-            await getMostPlays()
+            const { bestScores, bestTimes, mostPlays } = await fetchLeaderboards(mode)
+            setBestScores(bestScores)
+            setBestTimes(bestTimes)
+            setMostPlays(mostPlays)
             setLoading(false)
         }
-        fetchLeaderboards()
+        fetchData()
     }, [mode])
 
     return (
