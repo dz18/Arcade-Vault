@@ -28,11 +28,20 @@ export const AuthProvider = ({ children }) => {
                 uid: newUser.uid,
                 username,
                 email,
-                joined: new Date()
+                joined: new Date(),
+                photoUrl: '',
             }
 
-            const docRef = doc(db, 'users', newUser.uid)
-            await setDoc(docRef, userData)
+            const requests = {
+                allFriends: {},
+                friendRequests: {},
+                ownRequests: {},
+            }
+
+            const userRef = doc(db, 'users', newUser.uid)
+            const requestRef = doc(db, 'requests', newUser.uid)
+            await setDoc(userRef, userData)
+            await setDoc(requestRef, requests)
         } catch (error) {
             console.error('Error Signing Up:', error)
         }

@@ -18,7 +18,8 @@ import {
     CatchingPokemon,
     Pets,
     AttachMoney,
-    CurrencyBitcoin
+    CurrencyBitcoin,
+    QuestionMark
 } from "@mui/icons-material";
 import { useState, useEffect } from "react";
 import { 
@@ -229,7 +230,7 @@ export default function CardMemoryGame() {
                     },
                     bestTime: {
                         ...docSnap.data()?.bestTime,
-                        [mode] : Math.min(docSnap.data()?.bestTime?.[mode] || Infinity, time)
+                        [mode] : Math.max(docSnap.data()?.bestTime?.[mode] || 0, time)
                     },
                     lastPlayed: new Date(),
                     totalGamesPlayed: increment(1)
@@ -425,7 +426,14 @@ export default function CardMemoryGame() {
                                 </Box>
                             </>
                         ) : (
-                            <Typography>?</Typography>
+                            <Box
+                                display='flex'
+                                height='100%'
+                                alignItems='center'
+                            >
+                                <QuestionMark fontSize="large"/>
+                            </Box>
+
                         )}
                             
                         </Box>

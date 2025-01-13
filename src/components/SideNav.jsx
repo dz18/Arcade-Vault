@@ -112,6 +112,7 @@ export default function SideNav() {
                                 alignItems='center'
                             >
                                 <Avatar
+                                    src={userData?.photoUrl}
                                     sx={{
                                         mr: 1,
                                         ml: 1

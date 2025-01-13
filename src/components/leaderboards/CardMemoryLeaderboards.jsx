@@ -1,6 +1,6 @@
 import { AvTimer, Replay, SportsScore } from "@mui/icons-material";
 import { Avatar, Box, Divider, Grid2, LinearProgress, Typography } from "@mui/material";
-import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
+import { collection, getDocs, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 import { db } from "../../../firebaseConfig";
 import { Fragment, useEffect, useState } from "react";
 
@@ -11,63 +11,64 @@ export default function CardMemoryLeaderboards({ mode }) {
     const [bestTimes, setBestTimes] = useState([])
     const [mostPlays, setMostPlays] = useState([])
 
-    const getBestScores = async () => {
-        try {
-            const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards')
-            const q = query(leaderboardsRef, orderBy(`bestScore.${mode}`, 'desc'), limit(15))
-            const snapShot = await getDocs(q)
-
-            const bestScores = snapShot.docs.map(doc => ({
+    const getBestScores = () => {
+        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
+        const q = query(leaderboardsRef, orderBy(`bestScore.${mode}`, 'desc'), limit(15));
+        
+        // Listen for real-time updates
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const bestScores = snapshot.docs.map(doc => ({
                 id: doc.id,
                 score: doc.data().bestScore[mode],
                 username: doc.data().username
-            }))
+            }));
+            console.log(bestScores);
+            setBestScores(bestScores);
+        }, (error) => {
+            console.error(error);
+        });
 
-            console.log(bestScores)
-            setBestScores(bestScores)
+        return unsubscribe; // Return the unsubscribe function for cleanup
+    };
 
-        } catch (error) {
-            console.error(error)
-        }
-    }
+    const getBestTimes = () => {
+        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
+        const q = query(leaderboardsRef, orderBy(`bestTime.${mode}`, 'desc'), limit(15));
 
-    const getBestTimes = async () => {
-        try {
-            const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards')
-            const q = query(leaderboardsRef, orderBy(`bestTime.${mode}`, 'desc'), limit(15))
-            const snapShot = await getDocs(q)
-
-            const bestTimes = snapShot.docs.map(doc => ({
+        // Listen for real-time updates
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const bestTimes = snapshot.docs.map(doc => ({
                 id: doc.id,
                 time: doc.data().bestTime[mode],
                 username: doc.data().username
-            }))
+            }));
+            console.log(bestTimes);
+            setBestTimes(bestTimes);
+        }, (error) => {
+            console.error(error);
+        });
 
-            console.log(bestTimes)
-            setBestTimes(bestTimes)
+        return unsubscribe; // Return the unsubscribe function for cleanup
+    };
 
-        } catch (error) {
-            console.error(error)
-        }
-    }
+    const getMostPlays = () => {
+        const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards');
+        const q = query(leaderboardsRef, orderBy('totalGamesPlayed', 'desc'), limit(15));
 
-    const getMostPlays = async () => {
-        try {
-            const leaderboardsRef = collection(db, 'games', 'cardMemory', 'leaderboards')
-            const q = query(leaderboardsRef, orderBy(`totalGamesPlayed`, 'desc'), limit(15))
-            const snapShot = await getDocs(q)
-
-            const mostPlays = snapShot.docs.map(doc => ({
+        // Listen for real-time updates
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const mostPlays = snapshot.docs.map(doc => ({
                 id: doc.id,
                 totalGamesPlayed: doc.data().totalGamesPlayed,
                 username: doc.data().username
-            }))
+            }));
+            setMostPlays(mostPlays);
+        }, (error) => {
+            console.error(error);
+        });
 
-            setMostPlays(mostPlays)
-        } catch (error) {
-
-        }
-    }
+        return unsubscribe; // Return the unsubscribe function for cleanup
+    };
 
     useEffect(() => {
         const fetchLeaderboards = async () => {
@@ -86,7 +87,7 @@ export default function CardMemoryLeaderboards({ mode }) {
 
                 {/* Best Score */}
                 <Grid2
-                    bgcolor='lime'
+                    bgcolor='gold'
                     p={2}
                     size={{xs: 12, sm: 6, md: 4}}
                     overflow='hidden'
@@ -119,7 +120,9 @@ export default function CardMemoryLeaderboards({ mode }) {
                                         my={1}
                                         alignItems="center"
                                     >
-                                        <Avatar />
+                                        <Avatar 
+                                            src={score.photoUrl}
+                                        />
                                         <Typography
                                             flexGrow={1}
                                             ml={1}
@@ -188,7 +191,9 @@ export default function CardMemoryLeaderboards({ mode }) {
                                         my={1}
                                         alignItems="center"
                                     >
-                                        <Avatar />
+                                        <Avatar  
+                                            src={score.photoUrl}
+                                        />
                                         <Typography
                                             flexGrow={1}
                                             ml={1}
@@ -225,7 +230,7 @@ export default function CardMemoryLeaderboards({ mode }) {
                 
                 {/* Most Plays */}
                 <Grid2
-                    bgcolor='orange'
+                    bgcolor='lightgreen'
                     p={2}
                     size={{xs: 12, sm: 6, md: 4}}
                     overflow='hidden'
@@ -258,7 +263,9 @@ export default function CardMemoryLeaderboards({ mode }) {
                                         my={1}
                                         alignItems="center"
                                     >
-                                        <Avatar />
+                                        <Avatar  
+                                            src={score.photoUrl}
+                                        />
                                         <Typography
                                             flexGrow={1}
                                             ml={1}

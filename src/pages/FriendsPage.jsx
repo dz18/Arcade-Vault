@@ -1,16 +1,45 @@
-import { Check, ContentCopy, Delete, Dns, Inbox, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
-import { Avatar, Box, Button, IconButton, LinearProgress, List, ListItem, ListItemAvatar, ListItemSecondaryAction, ListItemText, TextField, Typography } from "@mui/material";
+import { 
+    Check, 
+    ContentCopy, 
+    Delete, 
+    Inbox, 
+    KeyboardArrowDown, 
+    KeyboardArrowUp 
+} from "@mui/icons-material";
+import { 
+    Avatar, 
+    Box, 
+    Button, 
+    Collapse, 
+    IconButton, 
+    LinearProgress, 
+    List, 
+    ListItem, 
+    ListItemAvatar, 
+    ListItemText, 
+    TextField, 
+    Typography 
+} from "@mui/material";
 import { useAuth } from "../contexts/AuthContext";
-import { useEffect, useState } from "react";
-import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
+import { 
+    useEffect, 
+    useState 
+} from "react";
+import { 
+    doc, 
+    getDoc, 
+    onSnapshot, 
+    setDoc, 
+    updateDoc 
+} from "firebase/firestore";
 import { db } from "../../firebaseConfig";
+import RemoveFriendDialog from "../components/friends/RemoveFriendDialog";
 
 export default function FriendsPage() {
 
-    const {user, userData} = useAuth()
+    const {userData} = useAuth()
     const [friendRequestId, setFriendRequestId] = useState('')
     const [loading, setLoading] = useState(false)
-
 
     const [allFriendsList, setAllFriendsList] = useState({})
     const [FriendRequestsList, setFriendRequestsList] = useState({})
@@ -18,6 +47,8 @@ export default function FriendsPage() {
     const [hideAllFriends, setHideAllFriends] = useState(false)
     const [hideFriendRequests, setHideFriendRequests] = useState(true)
     const [hideYourRequests, setHideYourRequests] = useState(true)
+    const [openRemoveFriendDialog, setOpenRemoveFriendDialog] = useState(false)
+    const [selectedFriend, setSelectedFriend] = useState(null);
     useEffect(() => {
         let unsubscribe; // To clean up the listener
         if (userData?.username) {
@@ -52,112 +83,6 @@ export default function FriendsPage() {
         };
     }, [userData]);
     
-
-    const acceptFriendRequest = async (senderId) => {
-        try {
-            const recipientRef = doc(db, 'requests', userData.uid)
-            const senderRef = doc(db, 'requests', senderId)
-
-            // Update on current users end 
-            const recipientSnap = await getDoc(recipientRef)
-            if (recipientSnap.exists()) {
-                // Update friend Requests
-                const data = recipientSnap.data()
-                const friendRequest = data.friendRequests[senderId]
-                friendRequest.status = 'accepted'
-                data.friendRequests[senderId] = friendRequest
-
-                // Update All Friends
-                data.allFriends[senderId] = {
-                    username: friendRequest.username,
-                    timestamp: new Date()
-                }
-
-                // add it to firebase
-                await updateDoc(recipientRef, {
-                    friendRequests : {
-                        ...data.friendRequests
-                    },
-                    allFriends : {
-                        ...data.allFriends
-                    }
-                })
-            }
-
-            // Update on Senders End
-            const senderSnap = await getDoc(senderRef)
-            if (senderSnap.exists()) {
-                // Update ownRequests
-                const data = senderSnap.data()
-                const ownRequest = data.ownRequests[userData.uid]
-                ownRequest.status = 'accepted'
-
-                data.allFriends[userData.uid] = {
-                    username: ownRequest.username,
-                    timestamp: new Date()
-                }
-                
-                await updateDoc(senderRef, {
-                    ownRequests : {
-                        ...data.ownRequests
-                    },
-                    allFriends : {
-                        ...data.allFriends
-                    }
-                })
-                
-            }
-
-
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
-    const denyFriendRequest = async (senderId) => {
-        try {
-            const recipientRef = doc(db, 'requests', userData.uid)
-            const senderRef = doc(db, 'requests', senderId)
-
-            // Update on current users end 
-            const recipientSnap = await getDoc(recipientRef)
-            if (recipientSnap.exists()) {
-                // Update friend Requests
-                const data = recipientSnap.data()
-                const friendRequest = data.friendRequests[senderId]
-                friendRequest.status = 'denied'
-                data.friendRequests[senderId] = friendRequest
-
-                // add it to firebase
-                await updateDoc(recipientRef, {
-                    friendRequests : {
-                        ...data.friendRequests
-                    },
-                })
-            }
-
-            // Update on Senders End
-            const senderSnap = await getDoc(senderRef)
-            if (senderSnap.exists()) {
-                // Update ownRequests
-                const data = senderSnap.data()
-                const ownRequest = data.ownRequests[userData.uid]
-                ownRequest.status = 'denied'
-                
-                await updateDoc(senderRef, {
-                    ownRequests : {
-                        ...data.ownRequests
-                    },
-                })
-                
-            }
-
-
-        } catch (error) {
-            console.error(error)
-        }
-    }
-
     const sendFriendRequest = async () => {
         setLoading(true)
         if (!userData?.uid || !friendRequestId || userData?.uid === friendRequestId) {
@@ -210,6 +135,7 @@ export default function FriendsPage() {
                 friendRequests: {
                     ...recipientFriendRequests,
                     [userData.uid]: {
+                        photoUrl: userData.photoUrl,
                         username: userData.username,
                         status: 'requested',
                         timestamp: timestamp,
@@ -232,6 +158,7 @@ export default function FriendsPage() {
                 ownRequests: {
                     ...senderOwnRequests,
                     [friendRequestId]: {
+                        photoUrl: recipientUserSnap.data().photoUrl,
                         username: recipientUserSnap.data().username,
                         status: 'requested',
                         timestamp: timestamp,
@@ -248,8 +175,146 @@ export default function FriendsPage() {
         setLoading(false);
         setFriendRequestId('');
     }
-    
 
+    const acceptFriendRequest = async (senderId) => {
+        try {
+            const recipientRef = doc(db, 'requests', userData.uid)
+            const senderRef = doc(db, 'requests', senderId)
+
+            // Update on current users end 
+            const recipientSnap = await getDoc(recipientRef)
+            if (recipientSnap.exists()) {
+                // Update friend Requests
+                const data = recipientSnap.data()
+                const friendRequest = data.friendRequests[senderId]
+                delete data.friendRequests[senderId]
+
+                // Update All Friends
+                data.allFriends[senderId] = {
+                    photoUrl: friendRequest.photoUrl,
+                    username: friendRequest.username,
+                    timestamp: new Date()
+                }
+
+                // add it to firebase
+                await updateDoc(recipientRef, {
+                    friendRequests : {
+                        ...data.friendRequests
+                    },
+                    allFriends : {
+                        ...data.allFriends
+                    }
+                })
+            }
+
+            // Update on Senders End
+            const senderSnap = await getDoc(senderRef)
+            if (senderSnap.exists()) {
+                // Update ownRequests
+                const data = senderSnap.data()
+                const ownRequest = data.ownRequests[userData.uid]
+                ownRequest.status = 'accepted'
+
+                data.allFriends[userData.uid] = {
+                    username: ownRequest.username,
+                    photoUrl: ownRequest.photoUrl,
+                    timestamp: new Date()
+                }
+                
+                await updateDoc(senderRef, {
+                    ownRequests : {
+                        ...data.ownRequests
+                    },
+                    allFriends : {
+                        ...data.allFriends
+                    }
+                })
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const denyFriendRequest = async (senderId) => {
+        try {
+            const recipientRef = doc(db, 'requests', userData.uid)
+            const senderRef = doc(db, 'requests', senderId)
+
+            // Update on current users end 
+            const recipientSnap = await getDoc(recipientRef)
+            if (recipientSnap.exists()) {
+                // Update friend Requests
+                const data = recipientSnap.data()
+                delete data.friendRequest[senderId]
+                await updateDoc(recipientRef, {
+                    friendRequests : {
+                        ...data.friendRequests
+                    }
+                })
+            }
+
+            // Update on Senders End
+            const senderSnap = await getDoc(senderRef)
+            if (senderSnap.exists()) {
+                // Update ownRequests
+                const data = senderSnap.data()
+                const ownRequest = data.ownRequests[userData.uid]
+                ownRequest.status = 'denied'
+                
+                await updateDoc(senderRef, {
+                    ownRequests : {
+                        ...data.ownRequests
+                    },
+                })
+            }
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const removeFriend = async (friendsId) => {
+        try {
+            const currentUserRef = doc(db, 'requests', userData.uid);
+            const friendsRef = doc(db, 'requests', friendsId);
+
+            const currentUserSnap = await getDoc(currentUserRef)
+            if (currentUserSnap.exists()) {
+                const data = currentUserSnap.data()
+                delete data.allFriends[friendsId]
+                await updateDoc(currentUserRef, {
+                    allFriends: {
+                        ...data.allFriends
+                    }
+                })
+            }
+            
+            const friendsSnap = await getDoc(friendsRef)
+            if (friendsSnap.exists()) {
+                const data = friendsSnap.data()
+                delete data.allFriends[userData.uid]
+                await updateDoc(friendsRef, {
+                    allFriends: {
+                        ...data.allFriends
+                    }
+                })
+            }
+
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    const openDialog = (key) => {
+        setSelectedFriend({ key, username: allFriendsList[key].username });
+        setOpenRemoveFriendDialog(true);
+    };
+
+    const closeDialog = () => {
+        setOpenRemoveFriendDialog(false);
+        setSelectedFriend(null);
+    };
+    
+    // TODO: Redesign each section into its own component and use context to avoid prop drilling
     return (
         <Box mt={10}>
 
@@ -301,19 +366,31 @@ export default function FriendsPage() {
                         },
                     }}
                 >
-                    <KeyboardArrowDown sx={{mr : 2}}/>
+                    {hideAllFriends ?
+                        <KeyboardArrowDown sx={{mr : 2}}/>
+                    :
+                        <KeyboardArrowUp sx={{mr : 2}}/>
+                    }
+                    
                     <Typography variant="h6" >All Friends</Typography>
                 </Box>
 
                 {/* List of Friends */}
-                {!hideAllFriends && 
-                (Object.keys(allFriendsList).length !== 0 ? (
+                <Collapse in={hideAllFriends}>
+                {Object.keys(allFriendsList).length !== 0 ? (
                     <List>
                     {Object.keys(allFriendsList).map((key) => (
+                        <>
                         <ListItem 
                             key={key}
                             secondaryAction={
                                 <>
+                                <IconButton
+                                    onClick={() => openDialog(key)}
+                                    title="Remove Friend"
+                                >
+                                    <Delete/>
+                                </IconButton>
                                 <IconButton
                                     onClick={() => navigator.clipboard.writeText(String(key))}
                                     title="Copy ID"
@@ -331,17 +408,32 @@ export default function FriendsPage() {
                                 secondary={allFriendsList[key].status}
                             />
                         </ListItem>
+                        
+                        {selectedFriend && (
+                            <RemoveFriendDialog
+                                username={selectedFriend.username}
+                                friendKey={selectedFriend.key}
+                                open={openRemoveFriendDialog}
+                                onClose={closeDialog}
+                                removeFriend={removeFriend}
+                            />
+                        )}
+                        </>
                     ))}
                     </List>
                 ) : (
                     <Typography
                         variant='h6' 
-                        component="span" 
                         color="textSecondary"
+                        textAlign='center'
+                        my={1}
                     >
-                        No Items
+                        No Friends Yet. Send a friend Request by Id in the form above
                     </Typography>
-                ))}
+                )}
+                </Collapse>
+
+                
 
             </Box>
 
@@ -387,8 +479,8 @@ export default function FriendsPage() {
                 </Box>
 
                 {/* List of Friends */}
-                {!hideFriendRequests && 
-                (Object.keys(FriendRequestsList).length !== 0 ? (
+                <Collapse in={hideFriendRequests}>
+                {Object.keys(FriendRequestsList).length !== 0 ? (
                     <List>
                     {Object.keys(FriendRequestsList).map((key) => (
                         <ListItem key={key}
@@ -425,7 +517,7 @@ export default function FriendsPage() {
                             }
                         >
                             <ListItemAvatar>
-                                <Avatar />
+                                <Avatar/>
                             </ListItemAvatar>
                             <ListItemText
                                 primary={FriendRequestsList[key].username}
@@ -435,16 +527,19 @@ export default function FriendsPage() {
                     ))}
                     </List>
                 ) : (
+                    
                     <Typography
                         variant='h6' 
                         color="textSecondary"
                         textAlign='center'
-                        my={2}
+                        my={1}
                     >
                         No Friend Requests
                     </Typography>
-                ))}
-
+                    
+                )}
+                
+                </Collapse>
             </Box>
 
             {/* Own Requests */}
@@ -478,39 +573,46 @@ export default function FriendsPage() {
                 </Box>
 
                 {/* List of Friends */}
-                {!hideYourRequests && 
-                (Object.keys(YourRequestsList).length !== 0 ? (
+                <Collapse in={hideYourRequests}>
+                {Object.keys(YourRequestsList).length !== 0 ? (
                     <List>
                     {Object.keys(YourRequestsList).map((key) => (
-                        <ListItem 
+                        <ListItem
                             key={key}
                             secondaryAction={
-                                <>
-                                    <IconButton 
-                                        sx={{m: 1}} 
-                                        onClick={() => navigator.clipboard.writeText(String(key))}
-                                        title="Copy ID"
-                                    >
-                                        <ContentCopy />
-                                    </IconButton>
-                                </>
-                                
+                            <IconButton
+                                sx={{ m: 1 }}
+                                onClick={() => navigator.clipboard.writeText(String(key))}
+                                title="Copy ID"
+                            >
+                                <ContentCopy />
+                            </IconButton>
                             }
                         >
                             <ListItemAvatar>
-                                <Avatar />
+                            <Avatar />
                             </ListItemAvatar>
                             <ListItemText
-                                primary={YourRequestsList[key].username}
-                                secondary={YourRequestsList[key].status}
+                            primary={YourRequestsList[key].username}
+                            secondary={YourRequestsList[key].status}
                             />
                         </ListItem>
                     ))}
                     </List>
-                ) : (
-                    <Typography>No Items</Typography>
-                ))}
+                    ) : (
+                        <Typography
+                            variant='h6' 
+                            color="textSecondary"
+                            textAlign='center'
+                            my={1}
+                        >
+                            No Sent Requests
+                        </Typography>
+                    )}
+                </Collapse>
             </Box>
+
+            
 
 
         </Box>
