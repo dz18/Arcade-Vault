@@ -12,9 +12,11 @@ import {
     Menu,
     MenuItem,
     MenuList,
+    Skeleton,
 } from "@mui/material";
 import { 
     Code,
+    Diversity1,
     Gamepad,
     GitHub,
     Home,
@@ -36,6 +38,7 @@ export default function SideNav() {
 
     const { user, userData, logOut } = useAuth()
 
+    const [loading, setLoading] = useState(false)
     const [hide, setHide] = useState(false)
     const [openModal, setOpenModal] = useState(false)
     const [anchorEl, setAnchorEl] = useState(null)
@@ -58,14 +61,26 @@ export default function SideNav() {
 
     const handleLogout = async () => {
         await logOut()
+        navigate('/home')
         closeSettingsMenu()
     }
 
     useEffect(() => {
         if (anchorEl && !document.body.contains(anchorEl)) {
-            setAnchorEl(null); // Reset if invalid
+            setAnchorEl(null)
         }
     }, [anchorEl]);
+
+    useEffect(() => {
+        const fetchdata = () => {
+            if (userData?.username == null) {
+                setLoading(true)
+            } else {
+                setLoading(false)
+            }
+        }
+        fetchdata()
+    }, [userData])
 
     return (
         <Box
@@ -164,6 +179,22 @@ export default function SideNav() {
                         </ListItemIcon>
                         <ListItemText primary='Account Details'/>
                     </ListItemButton>
+                    {user &&
+                    <>
+                        <ListItemButton onClick={() => navigate('/messages')}>
+                            <ListItemIcon>
+                                <Message fontSize="large"/>
+                            </ListItemIcon>
+                            <ListItemText primary='Messages'/>
+                        </ListItemButton>
+                        <ListItemButton onClick={() => navigate('/friends')}>
+                            <ListItemIcon>
+                                <Diversity1 fontSize="large"/>
+                            </ListItemIcon>
+                            <ListItemText primary='Friends'/>
+                        </ListItemButton>
+                    </>
+                    }
                 </List>
 
                 <Divider/>
@@ -178,20 +209,16 @@ export default function SideNav() {
                 </Typography>
                 <List>
                     <ListItemButton
-                        onClick={() => navigate('/card-memory')}
+                        onClick={() => navigate('/games/card-memory')}
                     >
                         <ListItemIcon>
                             <Gamepad fontSize="large"/>
                         </ListItemIcon>
                         <ListItemText primary="Card Memory"/>
                     </ListItemButton>
-                    <ListItemButton>
-                        <ListItemIcon>
-                            <Gamepad fontSize="large"/>
-                        </ListItemIcon>
-                        <ListItemText primary="Sudoku"/>
-                    </ListItemButton>
-                    <ListItemButton>
+                    <ListItemButton
+                        onClick={() => navigate('/games/mine-sweeper')}
+                    >
                         <ListItemIcon>
                             <Gamepad fontSize="large"/>
                         </ListItemIcon>

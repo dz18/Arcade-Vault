@@ -12,7 +12,8 @@ import HomePage from './pages/HomePage';
 import '@fontsource/roboto/400.css';
 import { AuthProvider } from './contexts/AuthContext';
 import AccountDetailsPage from './pages/AccountPage';
-
+import FriendsPage from './pages/FriendsPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 // Games
 import CardMemoryGame from './pages/singleplayer-games/CardMemoryGame';
 
@@ -34,8 +35,20 @@ const router = createBrowserRouter([
         element: <AccountDetailsPage/>
       },
       {
-        path: 'card-memory',
+        path: 'messages',
+        element: <ComingSoonPage/>
+      },
+      {
+        path: 'friends',
+        element: <FriendsPage/>
+      },
+      {
+        path: 'games/card-memory',
         element: <CardMemoryGame/>
+      },
+      {
+        path: 'games/mine-sweeper',
+        element: <ComingSoonPage/>
       }
     ]
   }
