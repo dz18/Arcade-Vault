@@ -16,6 +16,7 @@ import FriendsPage from './pages/FriendsPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 // Games
 import CardMemoryGame from './pages/singleplayer-games/CardMemoryGame';
+import ChatroomPage from './pages/ChatRoomPage';
 
 const router = createBrowserRouter([
   {
@@ -35,8 +36,8 @@ const router = createBrowserRouter([
         element: <AccountDetailsPage/>
       },
       {
-        path: 'messages',
-        element: <ComingSoonPage/>
+        path: 'chatrooms',
+        element: <ChatroomPage/>
       },
       {
         path: 'friends',

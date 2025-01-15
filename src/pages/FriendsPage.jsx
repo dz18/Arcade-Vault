@@ -44,9 +44,9 @@ export default function FriendsPage() {
     const [allFriendsList, setAllFriendsList] = useState({})
     const [FriendRequestsList, setFriendRequestsList] = useState({})
     const [YourRequestsList, setYourRequestsList] = useState({})
-    const [hideAllFriends, setHideAllFriends] = useState(false)
-    const [hideFriendRequests, setHideFriendRequests] = useState(true)
-    const [hideYourRequests, setHideYourRequests] = useState(true)
+    const [hideAllFriends, setHideAllFriends] = useState(true)
+    const [hideFriendRequests, setHideFriendRequests] = useState(false)
+    const [hideYourRequests, setHideYourRequests] = useState(false)
     const [openRemoveFriendDialog, setOpenRemoveFriendDialog] = useState(false)
     const [selectedFriend, setSelectedFriend] = useState(null);
     useEffect(() => {

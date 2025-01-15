@@ -91,7 +91,7 @@ export default function SideNav() {
 
             {/* Main Content */}
             <Collapse
-                in={hide}
+                in={!hide}
                 orientation="horizontal"
             >
                 <Box
@@ -186,11 +186,11 @@ export default function SideNav() {
                         </ListItemButton>
                         {user &&
                         <>
-                            <ListItemButton onClick={() => navigate('/messages')}>
+                            <ListItemButton onClick={() => navigate('/chatrooms')}>
                                 <ListItemIcon>
                                     <Message fontSize="large"/>
                                 </ListItemIcon>
-                                <ListItemText primary='Messages'/>
+                                <ListItemText primary='Chatrooms'/>
                             </ListItemButton>
                             <ListItemButton onClick={() => navigate('/friends')}>
                                 <ListItemIcon>
