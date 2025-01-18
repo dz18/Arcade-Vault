@@ -153,7 +153,7 @@ export default function ChatroomPage () {
                 timestamp : new Date(),
                 uid: userData.uid,
             }
-            const messageRef = collection(db, 'chatrooms', selectedChatroom.id, 'messages')
+            const messageRef = collection(db, 'chatrooms', chatrooms[selectedChatroom].id, 'messages')
             await addDoc(messageRef, newMessage)
             setMessage('')
         } catch (error) {
@@ -340,7 +340,7 @@ export default function ChatroomPage () {
 
                         <IconButton
                             onClick={openManageChatroom}
-                            disabled={selectedChatroom == null || chatrooms[selectedChatroom]?.admin === userData?.uid ? true : false}
+                            disabled={selectedChatroom == null || chatrooms[selectedChatroom]?.admin !== userData?.uid ? true : false}
                             title="Manage Chatroom"
                         >
                             <MoreVert/>
