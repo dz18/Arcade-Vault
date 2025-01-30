@@ -30,7 +30,8 @@ import {
 import { doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import { db } from "../../../firebaseConfig";
-import CardMemoryLeaderboards from "../../components/leaderboards/CardMemoryLeaderboards";
+import CardMemoryLeaderboards from "../../components/leaderboards/cardMemory/CardMemoryLeaderboards";
+import CardMemoryInstructions from "../../components/game-instructions/CardMemoryInstructions";
 
 const cards = [
     {
@@ -242,7 +243,6 @@ export default function CardMemoryGame() {
                     bestTime: {[mode]: time},
                     lastPlayed: new Date(),
                     totalGamesPlayed: 1,
-                    username: userData.username
                 })
             }
 
@@ -444,6 +444,9 @@ export default function CardMemoryGame() {
 
             {/* LeaderBoards */}
             <CardMemoryLeaderboards mode={mode}/>
+
+            {/* How To Play */}
+            <CardMemoryInstructions/>
 
         </Box>
     );

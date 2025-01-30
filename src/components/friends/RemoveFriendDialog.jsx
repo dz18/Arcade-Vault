@@ -6,8 +6,15 @@ import {
     DialogTitle,
     Button
  } from "@mui/material"
-import { doc, getDoc } from "firebase/firestore"
-import { Fragment, useEffect, useState } from "react"
+import { 
+    doc, 
+    getDoc 
+} from "firebase/firestore"
+import { 
+    Fragment, 
+    useEffect, 
+    useState 
+} from "react"
 import { db } from "../../../firebaseConfig"
 
 export default function RemoveFriendDialog ({username, friendKey, open, onClose, removeFriend}) {

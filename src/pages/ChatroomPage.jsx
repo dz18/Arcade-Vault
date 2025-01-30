@@ -9,7 +9,8 @@ import {
     IconButton,
     Collapse,
     TextField,
-    Avatar
+    Avatar,
+    selectClasses
 } from "@mui/material";
 import { 
     addDoc,
@@ -20,8 +21,9 @@ import {
     onSnapshot, 
     orderBy, 
     query, 
+    updateDoc, 
     where } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { db } from "../../firebaseConfig";
 import { useAuth } from "../contexts/AuthContext";
 import { 
@@ -29,6 +31,7 @@ import {
     Chat, 
     Delete, 
     Edit, 
+    ExitToApp, 
     FilterAlt, 
     Height, 
     KeyboardDoubleArrowLeft, 
@@ -39,14 +42,18 @@ import {
 } from "@mui/icons-material";
 import CreateChatroomModal from "../components/chatrooms/createChatroomModal";
 import ManageChatroomModal from "../components/chatrooms/ManageChatroomModal";
+import Message from "../components/chatrooms/Message";
 
 export default function ChatroomPage () {
+
+    const containerRef = useRef(null)
 
     const {userData} = useAuth()
     const [userMap, setUserMap] = useState({})
 
     const [chatrooms, setChatrooms] = useState([])
     const [selectedChatroom, setSelectedChatroom] = useState(null)
+    const [selectedChatroomName, setSelectedChatroomName] = useState('')
     const [chatroomMessages, setChatroomMessages] = useState([])
     const [loadingChatMessages, setLoadingChatMessages] = useState(true)
     const [message, setMessage] = useState('')
@@ -71,7 +78,6 @@ export default function ChatroomPage () {
                             acc[doc.id] = data
                             return acc
                         }, {})
-                        console.log(chatrooms)
                         setChatrooms(chatrooms)
                     })
                     return () => unsubscribe()
@@ -130,20 +136,45 @@ export default function ChatroomPage () {
         fetchMessagesAndUsers();
     }, [selectedChatroom, userData, userMap])
 
-    const handleSelectChatroom = (id) => {
-        console.log(id)
+    // Auto-scroll to most recent message
+    useEffect(() => {
+        if(containerRef && containerRef.current) {
+            const element = containerRef.current
+            element.scroll({
+                top: element.scrollHeight,
+                left: 0,
+                behavior: 'smooth'
+            })
+        }
+    }, [containerRef, chatroomMessages])
+
+    const handleSelectChatroom = (id, name) => {
         setSelectedChatroom(id)
+        setSelectedChatroomName(chatrooms[id].name)
     }
-    
-    const formatDate = (date) => {
-        return new Intl.DateTimeFormat('en-US', {
-            year: '2-digit',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-        }).format(new Date(date))
+
+    const leaveChatroom = async () => {
+        try {
+            const chatroomsRef = doc(db, 'chatrooms', selectedChatroom)
+            const chatroomSnap = await getDoc(chatroomsRef)
+            if (chatroomSnap.exists()) {
+                const data = chatroomSnap.data()
+                if (data.admin === userData.uid) {
+                    alert(`You cannot leave a chatroom as admin. Please make another user admin or delete the chatroom to leave.`)
+                    return
+                }
+                const users = data.users.filter(id => id !== userData.uid)
+                console.log(users)
+                updateDoc(chatroomsRef, {
+                    users : [...users]
+                })
+                setSelectedChatroom(null)
+                setChatroomMessages([])
+            }
+        } catch (error) {
+            console.error(error)
+        }
+        
     }
 
     const sendMessage = async () => {
@@ -224,11 +255,10 @@ export default function ChatroomPage () {
                             >
                                 <List>
                                     {Object.keys(chatrooms).map((chatroomId, i) => (
-                                        <ListItemButton 
+                                        <ListItemButton
                                             key={i}
                                             onClick={() => handleSelectChatroom(chatroomId)}
                                             selected={selectedChatroom === chatroomId ? true : false}
-                                            
                                         >
                                             <ListItemIcon>
                                                 <Chat />
@@ -269,7 +299,6 @@ export default function ChatroomPage () {
                         >
                             <IconButton
                                 title="Sort Chatrooms"
-                                disabled={chatrooms[selectedChatroom]?.admin === userData?.uid ? false : true}
                             >
                                 <Sort/>
                             </IconButton>
@@ -280,10 +309,11 @@ export default function ChatroomPage () {
                                 <Add/>
                             </IconButton>
                             <IconButton
-                                title="Filter Chatrooms"
-                                disabled={chatrooms[selectedChatroom]?.admin === userData?.uid ? false : true}
+                                title={`Leave "${selectedChatroomName}"`}
+                                disabled={!selectedChatroom}
+                                onClick={() => leaveChatroom()}
                             >
-                                <FilterAlt/>
+                                <ExitToApp/>
                             </IconButton>
                         </Box>
 
@@ -354,6 +384,7 @@ export default function ChatroomPage () {
 
                     {/* All Messages */}
                     <Box 
+                        ref={containerRef}
                         display='flex'
                         flexDirection='column'
                         flexGrow={1}
@@ -364,38 +395,11 @@ export default function ChatroomPage () {
                     {chatroomMessages.map((message, i) => {
                         const user = userMap[message.uid];
                         return (
-                            <Box
+                            <Message
                                 key={i}
-                                display='flex'
-                                flexDirection='row'
-                                alignItems='center'
-                                ml={1}
-                            >
-                                <Avatar
-                                    src={user?.photoUrl || ''}
-                                    alt={user?.name || 'User'}
-                                />
-                                <Box ml={1}>
-                                    <Box>
-                                        <Typography variant="body2" fontWeight='bold'>
-                                            {user?.username || 'i hate this'}{' '}
-                                            <Typography 
-                                                color="text.secondary"
-                                                variant="caption"
-                                            > 
-                                                {message?.timestamp && formatDate(message.timestamp.toDate())}
-                                            </Typography>
-                                        </Typography>
-                                    </Box>
-                                    
-                                    <Typography
-                                        boxSizing='border-box'
-                                    >
-                                        {message.text}
-                                    </Typography> 
-                                </Box>
-                                
-                            </Box>
+                                user={user}
+                                message={message}
+                            />
                         )
                     })}
                     </Box>

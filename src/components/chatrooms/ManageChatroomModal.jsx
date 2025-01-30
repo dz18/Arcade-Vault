@@ -47,15 +47,15 @@ export default function ManageChatroomModal ({open, onClose, selectedChatroom}) 
                     if (selectedChatroom?.users.length > 0) {
                         const userDocs = await Promise.all(
                             selectedChatroom.users.map(uid => getDoc(doc(db, 'users', uid)))
-                        );
+                        )
     
                         // Combine member data from userDocs
                         const fetchMemberData = userDocs.reduce((acc, doc) => {
                             if (doc.exists()) {
-                                acc[doc.id] = doc.data();
+                                acc[doc.id] = doc.data()
                             }
-                            return acc;
-                        }, {});
+                            return acc
+                        }, {})
     
                         // Merge member data into usersMap
                         usersMap = { ...usersMap, ...fetchMemberData };
@@ -189,6 +189,10 @@ export default function ManageChatroomModal ({open, onClose, selectedChatroom}) 
                         onChange={(e) => setName(e.target.value)}
                     />
 
+                    <Typography mt={2}>
+                        Admin: { userMap[selectedChatroom?.admin]?.username}
+                    </Typography>
+                    
                     <Typography mt={2}>Add Members: </Typography>
                     <Box>
                         <Select
