@@ -17,6 +17,7 @@ import ComingSoonPage from './pages/ComingSoonPage';
 // Games
 import CardMemoryGame from './pages/singleplayer-games/CardMemoryGame';
 import ChatroomPage from './pages/ChatRoomPage';
+import MinesweeperGame from './pages/singleplayer-games/MinesweeperGame';
 
 const router = createBrowserRouter([
   {
@@ -49,7 +50,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'games/mine-sweeper',
-        element: <ComingSoonPage/>
+        element: <MinesweeperGame/>
       }
     ]
   }
