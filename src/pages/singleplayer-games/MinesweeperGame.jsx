@@ -1,129 +1,182 @@
-import { SentimentVerySatisfied } from "@mui/icons-material";
+import { SentimentVerySatisfied } from "@mui/icons-material"
 import { 
     Box, 
     IconButton, 
     Typography,
     Button
-} from "@mui/material";
-import { useState, useEffect } from "react";
+} from "@mui/material"
+import { useState, useEffect } from "react"
 
 export default function MinesweeperGame() {
-    const [height, setHeight] = useState(9);
-    const [width, setWidth] = useState(9);
-    const [mines, setMines] = useState(10);
-    const [flagsPlaced, setFlagsPlaced] = useState(0);
-    const [time, setTime] = useState(0);
-    const [board, setBoard] = useState([]);
-    const [firstClick, setFirstClick] = useState(true);
+    const [height, setHeight] = useState(9)
+    const [width, setWidth] = useState(9)
+    const [mines, setMines] = useState(10)
+    const [time, setTime] = useState(0)
+    const [board, setBoard] = useState([])
+    const [firstClick, setFirstClick] = useState(true)
+    const [gameOver, setGameOver] = useState(false)
 
     useEffect(() => {
-        setBoard(generateEmptyBoard(height, width));
-    }, [height, width, mines]);
+        setBoard(generateEmptyBoard(height, width))
+        setTime(0)
+        setGameOver(false)
+        setFirstClick(true)
+    }, [height, width, mines])
+
+    useEffect(() => {
+        let timer
+        if (!firstClick && !gameOver) {
+            timer = setInterval(() => {
+                setTime(prevTime => prevTime + 1)
+            }, 1000)
+        }
+
+        return () => clearInterval(timer)
+    }, [firstClick, gameOver])
 
     function generateEmptyBoard(rows, cols) {
         return Array.from({ length: rows }, () => 
             Array.from({ length: cols }, () => ({ type: 0, flipped: false, flagged: false }))
-        );
+        )
     }
 
     function generateBoard(rows, cols, mines, safeRow, safeCol) {
-        let board = generateEmptyBoard(rows, cols);
-        let positions = [];
+        let board = generateEmptyBoard(rows, cols)
+        let positions = []
 
-        // Create all possible positions except the first clicked one
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
                 if (!(r === safeRow && c === safeCol)) {
-                    positions.push([r, c]);
+                    positions.push([r, c])
                 }
             }
         }
 
-        // Shuffle positions and pick first 'mines' elements
-        positions.sort(() => Math.random() - 0.5);
-        const minePositions = positions.slice(0, mines);
+        positions.sort(() => Math.random() - 0.5)
+        const minePositions = positions.slice(0, mines)
 
-        // Place mines
         minePositions.forEach(([r, c]) => {
-            board[r][c].type = "M";
-        });
+            board[r][c].type = "M"
+        })
 
-        // Calculate numbers around mines
         for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
-                if (board[r][c].type === "M") continue;
-                let mineCount = 0;
+                if (board[r][c].type === "M") continue
+                let mineCount = 0
                 for (let dr of [-1, 0, 1]) {
                     for (let dc of [-1, 0, 1]) {
-                        let nr = r + dr, nc = c + dc;
+                        let nr = r + dr, nc = c + dc
                         if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && board[nr][nc].type === "M") {
-                            mineCount++;
+                            mineCount++
                         }
                     }
                 }
-                board[r][c].type = mineCount;
+                board[r][c].type = mineCount
             }
         }
 
-        // Ensure first-clicked cell is an empty (`0`) cell
         if (board[safeRow][safeCol].type !== 0) {
-            return generateBoard(rows, cols, mines, safeRow, safeCol);
+            return generateBoard(rows, cols, mines, safeRow, safeCol)
         }
 
-        return board;
+        return board
     }
 
-    function changeDifficulty(height, width, mines) {
-        setHeight(height);
-        setWidth(width);
-        setMines(mines);
-        setFirstClick(true);
-        setBoard(generateEmptyBoard(height, width));
+    function checkWin(board) {
+        let minesFlaggedCorrectly = 0
+        let totalMines = 0
+    
+        board.flat().forEach(cell => {
+            if (cell.type === "M") totalMines++
+            if (cell.flagged && cell.type === "M") minesFlaggedCorrectly++
+        })
+
+        if (minesFlaggedCorrectly === totalMines && countFlags(board) === totalMines) {
+            setGameOver(true)
+
+            return true
+        }
+        return false
+    }
+    
+    function revealAllTiles(board) {
+        return board.map(row =>
+            row.map(cell => ({
+                ...cell,
+                flipped: cell.flagged ? false : true
+            }))
+        );
     }
 
     function flip(e, row, col) {
-        e.preventDefault(); // Prevent default right-click menu
+        e.preventDefault()
+
+        if (gameOver) {
+            return
+        }
     
         setBoard(prevBoard => {
-            let newBoard = prevBoard.map(r => r.map(cell => ({ ...cell }))); // Deep copy board
+            let newBoard = prevBoard.map(r => r.map(cell => ({ ...cell })))
     
-            if (e.button === 0) {
-                if (newBoard[row][col].flipped || newBoard[row][col].flagged) return prevBoard; // Ignore flagged/flipped cells
-    
-                if (firstClick) {
-                    newBoard = generateBoard(height, width, mines, row, col);
-                    setFirstClick(false);
-                }
+            if (e.button === 0) { // Left Click
+                if (newBoard[row][col].flipped || newBoard[row][col].flagged) return prevBoard
                 
-                revealCell(newBoard, row, col);
-            } 
-            else if (e.button === 2) {
-                // Toggle flag
+                if (firstClick) {
+                    newBoard = generateBoard(height, width, mines, row, col)
+                    setFirstClick(false)
+                }
+    
+                if (newBoard[row][col].type === "M") {
+                    alert("💥 Boom! You hit a mine! Game Over.")
+                    setGameOver(true)   
+                    newBoard = revealAllTiles(newBoard);
+                } else {
+                    revealCell(newBoard, row, col)
+                }
+    
+            } else if (e.button === 2) { // Right Click
                 if (!newBoard[row][col].flipped) {
-                    newBoard[row][col].flagged = !newBoard[row][col].flagged;
-                    setFlagsPlaced(flags => newBoard[row][col].flagged ? flags + 1 : flags - 1);
+                    newBoard[row][col].flagged = !newBoard[row][col].flagged
                 }
             }
     
-            return newBoard;
-        });
+            if (checkWin(newBoard)) {
+                alert("You Win")
+                revealAllTiles(newBoard)
+            }
+    
+            return newBoard
+        })
     }
-        
+    
+    function resetGame(height, width, mines) {
+        setHeight(height)
+        setWidth(width)
+        setMines(mines)
+        setFirstClick(true)
+        setGameOver(false)
+        setTime(0)
+        setBoard(generateEmptyBoard(height, width))
+    }
 
     function revealCell(board, row, col) {
-        if (row < 0 || row >= height || col < 0 || col >= width || board[row][col].flipped) return;
+        if (row < 0 || row >= height || col < 0 || col >= width || board[row][col].flipped) return
 
-        board[row][col].flipped = true;
+        board[row][col].flipped = true
 
         if (board[row][col].type === 0) {
             for (let dr of [-1, 0, 1]) {
                 for (let dc of [-1, 0, 1]) {
                     if (dr !== 0 || dc !== 0) {
-                        revealCell(board, row + dr, col + dc);
+                        revealCell(board, row + dr, col + dc)
                     }
                 }
             }
         }
+    }
+
+    function countFlags(board) {
+        return board.flat().reduce((count, cell) => count + (cell.flagged ? 1 : 0), 0)
     }
 
     return (
@@ -133,9 +186,9 @@ export default function MinesweeperGame() {
             <Typography variant="h6" color="grey">Find & Flag all the mines</Typography>
 
             <Box mt={2}>
-                <Button variant='outlined' onClick={() => changeDifficulty(9,9,10)}>Easy</Button>
-                <Button variant='outlined' onClick={() => changeDifficulty(16,16,40)}>Intermediate</Button>
-                <Button variant='outlined' onClick={() => changeDifficulty(16,30,99)}>Expert</Button>
+                <Button variant='outlined' onClick={() => resetGame(9,9,10)}>Easy</Button>
+                <Button variant='outlined' onClick={() => resetGame(16,16,40)}>Intermediate</Button>
+                <Button variant='outlined' onClick={() => resetGame(16,30,99)}>Expert</Button>
             </Box>
 
             <Box 
@@ -145,9 +198,10 @@ export default function MinesweeperGame() {
                 
                 <Box display="flex" alignItems="center" justifyContent='center'>
                     <Typography variant="h5" bgcolor="black" color="white" p={1} borderRadius={1} width={30}>
-                        {mines - flagsPlaced}
+                        {mines - countFlags(board)}
                     </Typography>
-                    <IconButton>
+
+                    <IconButton onClick={() => resetGame(height, width, mines)}>
                         <SentimentVerySatisfied fontSize="large" />
                     </IconButton>
                     <Typography variant="h5" bgcolor="black" color="white" p={1} borderRadius={1} width={30}>
@@ -183,10 +237,10 @@ export default function MinesweeperGame() {
                                     bgcolor="darkgray"
                                     border="1px solid black"
                                     onClick={(e) => flip(e, rowIndex, colIndex)}
-                                    onContextMenu={(e) => flip(e, rowIndex, colIndex)} // Right-click flagging
-                                    sx={{ cursor: "pointer" }}
+                                    onContextMenu={gameOver ? undefined : (e) => flip(e, rowIndex, colIndex)} // Right-click flagging
+                                    sx={{ cursor: gameOver ? "not-allowed" : "pointer"}} // Right-click flagging
                                 >
-                                    {cell.flagged ? "🚩" : ""}
+                                    {"🚩"}
                                 </Box>
                             :
                                 <Box
@@ -196,7 +250,8 @@ export default function MinesweeperGame() {
                                     bgcolor="darkgray"
                                     border="1px solid black"
                                     onClick={(e) => flip(e, rowIndex, colIndex)}
-                                    sx={{ cursor: "pointer" }}
+                                    onContextMenu={gameOver ? undefined : (e) => flip(e, rowIndex, colIndex)} // Right-click flagging
+                                    sx={{ cursor: gameOver ? "not-allowed" : "pointer"}} // Right-click flagging
                                 />
                             )
                         ))
